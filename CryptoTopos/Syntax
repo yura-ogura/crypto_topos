@@ -1,0 +1,68 @@
+import HoTTLean.Frontend.Commands
+
+noncomputable section
+
+declare_theory crypto_topos
+
+namespace CryptoTopos
+
+
+crypto_topos axiom V : Type
+crypto_topos axiom M : Type
+crypto_topos axiom R : Type
+crypto_topos axiom S : Type
+crypto_topos axiom G₀ : Type
+
+
+crypto_topos axiom isMonic_Δ (x y : M) (p q : Identity x y) : Identity p q
+
+
+crypto_topos axiom q_map : G₀ → M
+crypto_topos axiom Φ : M → S → G₀
+
+
+crypto_topos axiom sec_Φ (n : M) (s : S) : Identity (q_map (Φ n s)) n
+
+
+crypto_topos def Φ_inv (ρ : G₀) (_s : S) : M := q_map ρ
+
+
+crypto_topos def Theorem_iso_Φ (n : M) (s : S) : Identity (Φ_inv (Φ n s) s) n :=
+  sec_Φ n s
+
+crypto_topos axiom f_r : R → G₀ → G₀
+crypto_topos axiom f_r_inv : R → G₀ → G₀
+
+
+crypto_topos def Cipher (n : M) (s : S) (r : R) : G₀ :=
+  f_r r (Φ n s)
+
+crypto_topos def Decipher (ρ : G₀) (s : S) (r : R) : M :=
+  Φ_inv (f_r_inv r ρ) s
+
+
+crypto_topos axiom ϵ_r (r : R) (x : G₀) : Identity (f_r_inv r (f_r r x)) x
+
+
+crypto_topos def Theorem_Correctness (n : M) (s : S) (r : R) :
+  Identity (Decipher (Cipher n s r) s r) n :=
+  (@Identity.rec
+    G₀
+    (f_r_inv r (f_r r (Φ n s)))
+    (fun (x : G₀) (_ : Identity (f_r_inv r (f_r r (Φ n s))) x) =>
+      Identity (q_map (f_r_inv r (f_r r (Φ n s)))) (q_map x))
+
+    (Identity.refl (q_map (f_r_inv r (f_r r (Φ n s)))))
+    (Φ n s)
+    (ϵ_r r (Φ n s))
+  ).trans₀ (Theorem_iso_Φ n s)
+
+crypto_topos def Theorem_Uniqueness_M (n : M) (s : S) (r : R)
+  (p q : Identity (Decipher (Cipher n s r) s r) n) : Identity p q :=
+  isMonic_Δ
+    (Decipher (Cipher n s r) s r)
+    n
+    p
+    q
+
+end CryptoTopos
