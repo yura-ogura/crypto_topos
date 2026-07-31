@@ -7,7 +7,7 @@ This repository contains formal proofs of Cryptographic Topos.
 
 ## Prerequisites
 - Lean 4 ('v4.25.0-rc2')
-- 【HoTTLean】(https://github.com/sinhp/HoTTLean) (Fetched automatically via Lake)
+- [HoTTLean](https://github.com/sinhp/HoTTLean) (Fetched automatically via Lake)
 
 ## Structure
 - 'CryptoTopos/Syntax.lean': This is the internal language.
@@ -16,5 +16,6 @@ This repository contains formal proofs of Cryptographic Topos.
 
 ## How to build
 To build the project locally, run:
-'''shell
+```shell
 lake build
+```
