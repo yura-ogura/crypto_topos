@@ -1,636 +1,78 @@
 import HoTTLean.Frontend.Commands
 
-
-set_option linter.unusedVariables false
 noncomputable section
-universe v u
 
+/-- Theory of the cryptographic topos. -/
 declare_theory crypto_topos
+
 namespace CryptoTopos
 
-
-def IsSet (A : Type v) : Prop :=
-  ∀ (x y : A) (p q : x = y), p = q
-
-theorem pempty_is_set : IsSet PEmpty :=
-  fun x _ _ _ => x.elim
-
-theorem prod_is_set {A B : Type v} (hA : IsSet A) (hB : IsSet B) : IsSet (A × B) :=
-  fun (a1, b1) (a2, b2) p q => by
-    have hp1 : a1 = a2 := congrArg Prod.fst p
-    have hp2 : b1 = b2 := congrArg Prod.snd p
-    have hq1 : a1 = a2 := congrArg Prod.fst q
-    have hq2 : b1 = b2 := congrArg Prod.snd q
-    have e1 : hp1 = hq1 := hA a1 a2 hp1 hq1
-    have e2 : hp2 = hq2 := hB b1 b2 hp2 hq2
-    cases p; cases q
-    rfl
-
-structure Category (P : Type u) where
-  Hom : P → P → Type v
-  hom_is_set : ∀ (X Y : P), IsSet (Hom X Y)
-  id : ∀ (X : P), Hom X X
-  comp : ∀ {X Y Z : P}, Hom X Y → Hom Y Z → Hom X Z
-  id_comp : ∀ {X Y : P} (f : Hom X Y), comp (id X) f = f
-  comp_id : ∀ {X Y : P} (f : Hom X Y), comp f (id Y) = f
-  assoc : ∀ {W X Y Z : P} (f : Hom W X) (g : Hom X Y) (h : Hom Y Z),
-    comp (comp f g) h = comp f (comp g h)
-
-structure Presheaf (P : Type u) (C : Category.{v, u} P) where
-  obj : P → Type v
-  is_set : ∀ (X : P), IsSet (obj X)
-  map : ∀ {X Y : P}, C.Hom X Y → obj Y → obj X
-  map_id : ∀ (X : P) (x : obj X), map (C.id X) x = x
-  map_comp : ∀ {X Y Z : P} (f : C.Hom X Y) (g : C.Hom Y Z) (x : obj Z),
-    map (C.comp f g) x = map f (map g x)
-
-abbrev PresheafCategory (P : Type u) (C : Category.{v, u} P) : Type (max u (v + 1)) :=
-  Presheaf P C
-
-structure NatTrans {P : Type u} {C : Category.{v, u} P} (A B : PresheafCategory P C) where
-  app : ∀ (X : P), A.obj X → B.obj X
-  naturality : ∀ {X Y : P} (f : C.Hom X Y) (x : A.obj Y),
-    B.map f (app Y x) = app X (A.map f x)
-
-infixr:25 " ⟶ " => NatTrans
-
-theorem NatTrans.ext {P : Type u} {C : Category.{v, u} P} {A B : PresheafCategory P C}
-  {f g : A ⟶ B} (h : ∀ X x, f.app X x = g.app X x) : f = g := by
-  have h_app : f.app = g.app := funext fun X => funext (h X)
-  match f, g with
-  | ⟨f_app, f_nat⟩, ⟨g_app, g_nat⟩ =>
-    cases h_app
-    rfl
-
-def NatTrans.id {P : Type u} {C : Category.{v, u} P} (A : PresheafCategory P C) : A ⟶ A where
-  app X x := x
-  naturality f x := rfl
-
-def NatTrans.comp {P : Type u} {C : Category.{v, u} P} {A B C_presheaf : PresheafCategory P C}
-  (f : A ⟶ B) (g : B ⟶ C_presheaf) : A ⟶ C_presheaf where
-  app X x := g.app X (f.app X x)
-  naturality f_hom x :=
-    show C_presheaf.map f_hom (g.app _ (f.app _ x)) = g.app _ (f.app _ (A.map f_hom x))
-    from Eq.trans (g.naturality f_hom (f.app _ x)) (congrArg (g.app _) (f.naturality f_hom x))
-
-infixr:80 " ≫ " => NatTrans.comp
-
-theorem NatTrans.id_comp {P : Type u} {C : Category.{v, u} P} {A B : PresheafCategory P C}
-  (f : A ⟶ B) : NatTrans.id A ≫ f = f :=
-  NatTrans.ext fun X x => rfl
-
-theorem NatTrans.comp_id {P : Type u} {C : Category.{v, u} P} {A B : PresheafCategory P C}
-  (f : A ⟶ B) : f ≫ NatTrans.id B = f :=
-  NatTrans.ext fun X x => rfl
-
-theorem NatTrans.assoc {P : Type u} {C : Category.{v, u} P} {A B C_p D : PresheafCategory P C}
-  (f : A ⟶ B) (g : B ⟶ C_p) (h : C_p ⟶ D) : (f ≫ g) ≫ h = f ≫ (g ≫ h) :=
-  NatTrans.ext fun X x => rfl
-
-structure PresheafIso {P : Type u} {C : Category.{v, u} P} (A B : PresheafCategory P C) where
-  hom : A ⟶ B
-  inv : B ⟶ A
-  hom_inv_id : hom ≫ inv = NatTrans.id A
-  inv_hom_id : inv ≫ hom = NatTrans.id B
-
-infix:50 " ≅ " => PresheafIso
-
-def PresheafIso.symm {P : Type u} {C : Category.{v, u} P} {A B : PresheafCategory P C} (iso : A ≅ B) : B ≅ A where
-  hom := iso.inv
-  inv := iso.hom
-  hom_inv_id := iso.inv_hom_id
-  inv_hom_id := iso.hom_inv_id
-
-def PresheafIso.trans {P : Type u} {C : Category.{v, u} P} {A B C_presheaf : PresheafCategory P C}
-  (iso1 : A ≅ B) (iso2 : B ≅ C_presheaf) : A ≅ C_presheaf where
-  hom := iso1.hom ≫ iso2.hom
-  inv := iso2.inv ≫ iso1.inv
-  hom_inv_id :=
-    let eq1 : (iso1.hom ≫ iso2.hom) ≫ (iso2.inv ≫ iso1.inv) = iso1.hom ≫ (iso2.hom ≫ (iso2.inv ≫ iso1.inv)) := NatTrans.assoc _ _ _
-    let eq2 : iso1.hom ≫ (iso2.hom ≫ (iso2.inv ≫ iso1.inv)) = iso1.hom ≫ ((iso2.hom ≫ iso2.inv) ≫ iso1.inv) := congrArg (fun x => iso1.hom ≫ x) (Eq.symm (NatTrans.assoc _ _ _))
-    let eq3 : iso1.hom ≫ ((iso2.hom ≫ iso2.inv) ≫ iso1.inv) = iso1.hom ≫ (NatTrans.id B ≫ iso1.inv) := congrArg (fun x => iso1.hom ≫ (x ≫ iso1.inv)) iso2.hom_inv_id
-    let eq4 : iso1.hom ≫ (NatTrans.id B ≫ iso1.inv) = iso1.hom ≫ iso1.inv := congrArg (fun x => iso1.hom ≫ x) (NatTrans.id_comp iso1.inv)
-    let eq5 : iso1.hom ≫ iso1.inv = NatTrans.id A := iso1.hom_inv_id
-    Eq.trans eq1 (Eq.trans eq2 (Eq.trans eq3 (Eq.trans eq4 eq5)))
-  inv_hom_id :=
-    let eq1 : (iso2.inv ≫ iso1.inv) ≫ (iso1.hom ≫ iso2.hom) = iso2.inv ≫ (iso1.inv ≫ (iso1.hom ≫ iso2.hom)) := NatTrans.assoc _ _ _
-    let eq2 : iso2.inv ≫ (iso1.inv ≫ (iso1.hom ≫ iso2.hom)) = iso2.inv ≫ ((iso1.inv ≫ iso1.hom) ≫ iso2.hom) := congrArg (fun x => iso2.inv ≫ x) (Eq.symm (NatTrans.assoc _ _ _))
-    let eq3 : iso2.inv ≫ ((iso1.inv ≫ iso1.hom) ≫ iso2.hom) = iso2.inv ≫ (NatTrans.id B ≫ iso2.hom) := congrArg (fun x => iso2.inv ≫ (x ≫ iso2.hom)) iso1.inv_hom_id
-    let eq4 : iso2.inv ≫ (NatTrans.id B ≫ iso2.hom) = iso2.inv ≫ iso2.hom := congrArg (fun x => iso2.inv ≫ x) (NatTrans.id_comp iso2.hom)
-    let eq5 : iso2.inv ≫ iso2.hom = NatTrans.id C_presheaf := iso2.inv_hom_id
-    Eq.trans eq1 (Eq.trans eq2 (Eq.trans eq3 (Eq.trans eq4 eq5)))
-
-def yObj {P : Type u} (C : Category.{v, u} P) (P_obj : P) : PresheafCategory P C where
-  obj Q := C.Hom Q P_obj
-  is_set Q := C.hom_is_set Q P_obj
-  map f q := C.comp f q
-  map_id Q q := C.id_comp q
-  map_comp f g q := C.assoc f g q
-
-def y {P : Type u} (C : Category.{v, u} P) (P_obj : P) : PresheafCategory P C :=
-  yObj C P_obj
-
-
-structure IsMonomorphism {P : Type u} {C : Category.{v, u} P} {A B : PresheafCategory P C} (f : A ⟶ B) : Prop where
-  left_cancellation : ∀ {C_presheaf : PresheafCategory P C} (g h : C_presheaf ⟶ A), g ≫ f = h ≫ f → g = h
-
-def pzero {P : Type u} (C : Category.{v, u} P) : PresheafCategory P C where
-  obj _ := PEmpty
-  is_set _ x _ _ _ := nomatch x
-  map _ x := nomatch x
-  map_id _ x := nomatch x
-  map_comp _ _ x := nomatch x
-
-structure IsInitial {P : Type u} {C : Category.{v, u} P} (I : PresheafCategory P C) : Type (max u (v + 1)) where
-  to : ∀ (X : PresheafCategory P C), I ⟶ X
-  uniq : ∀ (X : PresheafCategory P C) (f : I ⟶ X), f = to X
-
-structure IsEpimorphism {P : Type u} {C : Category.{v, u} P} {A B : PresheafCategory P C} (f : A ⟶ B) : Type (max u (v + 1)) where
-  right_cancellation : ∀ {C_presheaf : PresheafCategory P C} (g h : B ⟶ C_presheaf), f ≫ g = f ≫ h → g = h
-  surjective_app : ∀ (P_obj : P) (b : B.obj P_obj), { a : A.obj P_obj // f.app P_obj a = b }
-
-def yonedaElemToMorphism {P : Type u} {C : Category.{v, u} P} {P_obj : P} {A : PresheafCategory P C} (a : A.obj P_obj) : y C P_obj ⟶ A where
-  app Q q := A.map q a
-  naturality {X Y} f q := Eq.symm (A.map_comp f q a)
-
-structure IsRepresentable {P : Type u} {C : Category.{v, u} P} (X : PresheafCategory P C) : Type (max u (v + 1)) where
-  P_obj : P
-  iso : X ≅ y C P_obj
-
-structure IsAssembly {P : Type u} {C : Category.{v, u} P} (X : PresheafCategory P C) : Type (max u (v + 1)) where
-  P_obj : P
-  Q_obj : P
-  f : y C P_obj ⟶ y C Q_obj
-  e : y C P_obj ⟶ X
-  m : X ⟶ y C Q_obj
-  fac : f = e ≫ m
-  epi_e : IsEpimorphism e
-  mono_m : IsMonomorphism m
-
-def presheafProd {P : Type u} (C : Category.{v, u} P) (A B : PresheafCategory P C) : PresheafCategory P C where
-  obj Q := A.obj Q × B.obj Q
-  is_set Q := prod_is_set (A.is_set Q) (B.is_set Q)
-  map f x := (A.map f x.1, B.map f x.2)
-  map_id Q x := Prod.ext (A.map_id Q x.1) (B.map_id Q x.2)
-  map_comp f g x := Prod.ext (A.map_comp f g x.1) (B.map_comp f g x.2)
-
-def presheafCoprod {P : Type u} (C : Category.{v, u} P) (A B : PresheafCategory P C) : PresheafCategory P C where
-  obj Q := Sum (A.obj Q) (B.obj Q)
-  is_set Q := fun x y p q => rfl
-  map f x := match x with
-    | Sum.inl a => Sum.inl (A.map f a)
-    | Sum.inr b => Sum.inr (B.map f b)
-  map_id Q x := by
-    cases x
-    · exact congrArg Sum.inl (A.map_id Q _)
-    · exact congrArg Sum.inr (B.map_id Q _)
-  map_comp f g x := by
-    cases x
-    · exact congrArg Sum.inl (A.map_comp f g _)
-    · exact congrArg Sum.inr (B.map_comp f g _)
-
-def presheafCoprodInl {P : Type u} (C : Category.{v, u} P) (A B : PresheafCategory P C) : A ⟶ presheafCoprod C A B where
-  app Q a := Sum.inl a
-  naturality _ _ := rfl
-
-def presheafCoprodInr {P : Type u} (C : Category.{v, u} P) (A B : PresheafCategory P C) : B ⟶ presheafCoprod C A B where
-  app Q b := Sum.inr b
-  naturality _ _ := rfl
-
-def presheafFst {P : Type u} (C : Category.{v, u} P) {A B : PresheafCategory P C} : presheafProd C A B ⟶ A where
-  app Q x := x.1
-  naturality {X Y} f x := rfl
-
-def presheafSnd {P : Type u} (C : Category.{v, u} P) {A B : PresheafCategory P C} : presheafProd C A B ⟶ B where
-  app Q x := x.2
-  naturality {X Y} f x := rfl
-
-def presheafLift {P : Type u} (C : Category.{v, u} P) {T A B : PresheafCategory P C} (f : T ⟶ A) (g : T ⟶ B) : T ⟶ presheafProd C A B where
-  app Q t := (f.app Q t, g.app Q t)
-  naturality {X Y} h t := Prod.ext (f.naturality h t) (g.naturality h t)
-
-structure IsInternalEquivalenceRelation {P : Type u} {C : Category.{v, u} P} {A E : PresheafCategory P C} (q1 q2 : E ⟶ A) : Prop where
-  is_mono : IsMonomorphism (presheafLift C q1 q2)
-  reflexive : ∃ (r : A ⟶ E), r ≫ q1 = NatTrans.id A ∧ r ≫ q2 = NatTrans.id A
-  symmetric : ∃ (s : E ⟶ E), s ≫ q1 = q2 ∧ s ≫ q2 = q1
-  transitive : ∀ {T : PresheafCategory P C} (x y z : T ⟶ A) (e1 : T ⟶ E) (e2 : T ⟶ E),
-    e1 ≫ q1 = x ∧ e1 ≫ q2 = y ∧ e2 ≫ q1 = y ∧ e2 ≫ q2 = z →
-    ∃ (e3 : T ⟶ E), e3 ≫ q1 = x ∧ e3 ≫ q2 = z
-
-structure IsCoequalizer {P : Type u} {C : Category.{v, u} P} {A B C_presheaf : PresheafCategory P C} (f g : A ⟶ B) (p : B ⟶ C_presheaf) : Type (max u (v + 1)) where
-  w : f ≫ p = g ≫ p
-  desc : ∀ {D : PresheafCategory P C} (h : B ⟶ D), f ≫ h = g ≫ h →
-    { k : C_presheaf ⟶ D // p ≫ k = h ∧ ∀ (k' : C_presheaf ⟶ D), p ≫ k' = h → k' = k }
-
-structure IsEffObject {P : Type u} {C : Category.{v, u} P} (X : PresheafCategory P C) : Type (max u (v + 1)) where
-  A : PresheafCategory P C
-  E : PresheafCategory P C
-  q1 : E ⟶ A
-  q2 : E ⟶ A
-  p : A ⟶ X
-  asm_A : IsAssembly A
-  asm_E : IsAssembly E
-  equiv : IsInternalEquivalenceRelation q1 q2
-  coeq : IsCoequalizer q1 q2 p
-
-def rep_is_asm {P : Type u} {C : Category.{v, u} P} (X : PresheafCategory P C) (hR : IsRepresentable X) : IsAssembly X :=
-  match hR with
-  | ⟨P_obj, iso⟩ =>
-    { P_obj := P_obj
-      Q_obj := P_obj
-      f := NatTrans.id (y C P_obj)
-      e := iso.inv
-      m := iso.hom
-      fac := Eq.symm iso.inv_hom_id
-      epi_e :=
-        { right_cancellation := fun {C_p} g h hgh =>
-            let eq1 : g = NatTrans.id _ ≫ g := Eq.symm (NatTrans.id_comp g)
-            let eq2 : NatTrans.id _ ≫ g = (iso.hom ≫ iso.inv) ≫ g := congrArg (fun x => x ≫ g) (Eq.symm iso.hom_inv_id)
-            let eq3 : (iso.hom ≫ iso.inv) ≫ g = iso.hom ≫ (iso.inv ≫ g) := NatTrans.assoc _ _ _
-            let eq4 : iso.hom ≫ (iso.inv ≫ g) = iso.hom ≫ (iso.inv ≫ h) := congrArg (fun x => iso.hom ≫ x) hgh
-            let eq5 : iso.hom ≫ (iso.inv ≫ h) = (iso.hom ≫ iso.inv) ≫ h := Eq.symm (NatTrans.assoc _ _ _)
-            let eq6 : (iso.hom ≫ iso.inv) ≫ h = NatTrans.id _ ≫ h := congrArg (fun x => x ≫ h) iso.hom_inv_id
-            let eq7 : NatTrans.id _ ≫ h = h := NatTrans.id_comp h
-            Eq.trans eq1 (Eq.trans eq2 (Eq.trans eq3 (Eq.trans eq4 (Eq.trans eq5 (Eq.trans eq6 eq7)))))
-          surjective_app := fun P_curr b =>
-            ⟨iso.hom.app P_curr b, by
-              have h_inv := congrFun (congrArg NatTrans.app iso.hom_inv_id) P_curr
-              exact congrFun h_inv b⟩ }
-      mono_m :=
-        { left_cancellation := fun {C_p} g h hgh =>
-            let eq1 : g = g ≫ NatTrans.id _ := Eq.symm (NatTrans.comp_id g)
-            let eq2 : g ≫ NatTrans.id _ = g ≫ (iso.hom ≫ iso.inv) := congrArg (fun x => g ≫ x) (Eq.symm iso.hom_inv_id)
-            let eq3 : g ≫ (iso.hom ≫ iso.inv) = (g ≫ iso.hom) ≫ iso.inv := Eq.symm (NatTrans.assoc _ _ _)
-            let eq4 : (g ≫ iso.hom) ≫ iso.inv = (h ≫ iso.hom) ≫ iso.inv := congrArg (fun x => x ≫ iso.inv) hgh
-            let eq5 : (h ≫ iso.hom) ≫ iso.inv = h ≫ (iso.hom ≫ iso.inv) := NatTrans.assoc _ _ _
-            let eq6 : h ≫ (iso.hom ≫ iso.inv) = h ≫ NatTrans.id _ := congrArg (fun x => h ≫ x) iso.hom_inv_id
-            let eq7 : h ≫ NatTrans.id _ = h := NatTrans.comp_id h
-            Eq.trans eq1 (Eq.trans eq2 (Eq.trans eq3 (Eq.trans eq4 (Eq.trans eq5 (Eq.trans eq6 eq7))))) } }
-
-def asm_is_eff {P : Type u} {C : Category.{v, u} P} (X : PresheafCategory P C) (hA : IsAssembly X) : IsEffObject X :=
-  { A := X
-    E := X
-    q1 := NatTrans.id X
-    q2 := NatTrans.id X
-    p := NatTrans.id X
-    asm_A := hA
-    asm_E := hA
-    equiv :=
-      { is_mono :=
-          { left_cancellation := fun {C_p} g h hgh =>
-              NatTrans.ext fun Q c => by
-                have h_app := congrFun (congrFun (congrArg NatTrans.app hgh) Q) c
-                exact congrArg Prod.fst h_app }
-        reflexive := ⟨NatTrans.id X, NatTrans.id_comp _, NatTrans.id_comp _⟩
-        symmetric := ⟨NatTrans.id X, NatTrans.id_comp _, NatTrans.id_comp _⟩
-        transitive := fun x y z e1 e2 h =>
-          ⟨e1, h.1, Eq.trans h.2.1 (Eq.trans h.2.2.1.symm h.2.2.2)⟩ }
-    coeq :=
-      { w := rfl
-        desc := fun {D} h_ h_eq =>
-          ⟨h_, And.intro (NatTrans.id_comp h_) (fun k' hk' => Eq.trans (Eq.symm (NatTrans.id_comp k')) hk')⟩ } }
-
-structure InclusionChain {P : Type u} {C : Category.{v, u} P} (X : PresheafCategory P C) : Type (max u (v + 1)) where
-  rep_is_asm : IsRepresentable X → IsAssembly X
-  asm_is_eff : IsAssembly X → IsEffObject X
-
-def inclusionChainInstance {P : Type u} {C : Category.{v, u} P} (X : PresheafCategory P C) : InclusionChain X :=
-  { rep_is_asm := rep_is_asm X
-    asm_is_eff := asm_is_eff X }
-
-
-structure IsProjectivePresheaf {P : Type u} {C : Category.{v, u} P} (X : PresheafCategory P C) : Type (max u (v + 1)) where
-  lift : ∀ {A B : PresheafCategory P C} (f : A ⟶ B) (e : IsEpimorphism f) (g : X ⟶ B),
-    { h : X ⟶ A // h ≫ f = g }
-
-structure IsIndecomposablePresheaf {P : Type u} {C : Category.{v, u} P} (X : PresheafCategory P C) : Type (max u (v + 1)) where
-  not_initial : ∀ (I : PresheafCategory P C) (hI : IsInitial I), (X ≅ I) → False
-  coprod_decomp : ∀ (A B : PresheafCategory P C) (f : X ⟶ presheafCoprod C A B),
-    ({ g : X ⟶ A // f = g ≫ presheafCoprodInl C A B }) ⊕
-    ({ g : X ⟶ B // f = g ≫ presheafCoprodInr C A B })
-
-structure IsIndecomposableProjective {P : Type u} {C : Category.{v, u} P} (X : PresheafCategory P C) : Type (max u (v + 1)) where
-  projective : IsProjectivePresheaf X
-  indecomposable : IsIndecomposablePresheaf X
-
-def representable_is_projective {P : Type u} {C : Category.{v, u} P} (P_obj : P) : IsProjectivePresheaf (y C P_obj) :=
-  { lift := fun {A B} f e g =>
-      let b := g.app P_obj (C.id P_obj)
-      let ⟨a, ha⟩ := e.surjective_app P_obj b
-      let h := yonedaElemToMorphism a
-      ⟨h, NatTrans.ext fun Q q =>
-        let eq1 : (h ≫ f).app Q q = f.app Q (A.map q a) := rfl
-        let eq2 : f.app Q (A.map q a) = B.map q (f.app P_obj a) := Eq.symm (f.naturality q a)
-        let eq3 : B.map q (f.app P_obj a) = B.map q b := congrArg (B.map q) ha
-        let eq4 : B.map q b = g.app Q (C.comp q (C.id P_obj)) := g.naturality q (C.id P_obj)
-        let eq5 : g.app Q (C.comp q (C.id P_obj)) = g.app Q q := congrArg (g.app Q) (C.comp_id q)
-        Eq.trans eq1 (Eq.trans eq2 (Eq.trans eq3 (Eq.trans eq4 eq5)))⟩ }
-
-def representable_is_indecomposable {P : Type u} {C : Category.{v, u} P} (P_obj : P) : IsIndecomposablePresheaf (y C P_obj) :=
-  { not_initial := fun I hI iso =>
-      nomatch ((hI.to (pzero C)).app P_obj (iso.hom.app P_obj (C.id P_obj)) : PEmpty)
-    coprod_decomp := fun A B f =>
-      match h_app : f.app P_obj (C.id P_obj) with
-      | Sum.inl a => Sum.inl ⟨yonedaElemToMorphism a, NatTrans.ext fun Q q =>
-          let eq1 : f.app Q q = f.app Q (C.comp q (C.id P_obj)) := congrArg (f.app Q) (Eq.symm (C.comp_id q))
-          let eq2 : f.app Q (C.comp q (C.id P_obj)) = (presheafCoprod C A B).map q (f.app P_obj (C.id P_obj)) := Eq.symm (f.naturality q (C.id P_obj))
-          let eq3 : (presheafCoprod C A B).map q (f.app P_obj (C.id P_obj)) = (presheafCoprod C A B).map q (Sum.inl a) := congrArg ((presheafCoprod C A B).map q) h_app
-          let eq4 : (presheafCoprod C A B).map q (Sum.inl a) = Sum.inl (A.map q a) := rfl
-          Eq.trans eq1 (Eq.trans eq2 (Eq.trans eq3 eq4))
-        ⟩
-      | Sum.inr b => Sum.inr ⟨yonedaElemToMorphism b, NatTrans.ext fun Q q =>
-          let eq1 : f.app Q q = f.app Q (C.comp q (C.id P_obj)) := congrArg (f.app Q) (Eq.symm (C.comp_id q))
-          let eq2 : f.app Q (C.comp q (C.id P_obj)) = (presheafCoprod C A B).map q (f.app P_obj (C.id P_obj)) := Eq.symm (f.naturality q (C.id P_obj))
-          let eq3 : (presheafCoprod C A B).map q (f.app P_obj (C.id P_obj)) = (presheafCoprod C A B).map q (Sum.inr b) := congrArg ((presheafCoprod C A B).map q) h_app
-          let eq4 : (presheafCoprod C A B).map q (Sum.inr b) = Sum.inr (B.map q b) := rfl
-          Eq.trans eq1 (Eq.trans eq2 (Eq.trans eq3 eq4))
-        ⟩ }
-
-def representable_to_ind_proj {P : Type u} {C : Category.{v, u} P} (X : PresheafCategory P C) (hR : IsRepresentable X) :
-    IsIndecomposableProjective X :=
-  match hR with
-  | ⟨P_obj, iso⟩ =>
-    { projective :=
-        { lift := fun {A B} f e g =>
-            let g' : y C P_obj ⟶ B := iso.inv ≫ g
-            let b := g'.app P_obj (C.id P_obj)
-            let ⟨a, ha⟩ := e.surjective_app P_obj b
-            let h' := yonedaElemToMorphism a
-            have h'_f : h' ≫ f = g' := NatTrans.ext fun Q q =>
-              let eq1 : (h' ≫ f).app Q q = f.app Q (A.map q a) := rfl
-              let eq2 : f.app Q (A.map q a) = B.map q (f.app P_obj a) := Eq.symm (f.naturality q a)
-              let eq3 : B.map q (f.app P_obj a) = B.map q b := congrArg (B.map q) ha
-              let eq4 : B.map q b = g'.app Q (C.comp q (C.id P_obj)) := g'.naturality q (C.id P_obj)
-              let eq5 : g'.app Q (C.comp q (C.id P_obj)) = g'.app Q q := congrArg (g'.app Q) (C.comp_id q)
-              Eq.trans eq1 (Eq.trans eq2 (Eq.trans eq3 (Eq.trans eq4 eq5)))
-            ⟨iso.hom ≫ h',
-              let eq1 : (iso.hom ≫ h') ≫ f = iso.hom ≫ (h' ≫ f) := NatTrans.assoc _ _ _
-              let eq2 : iso.hom ≫ (h' ≫ f) = iso.hom ≫ g' := congrArg (fun x => iso.hom ≫ x) h'_f
-              let eq3 : iso.hom ≫ g' = (iso.hom ≫ iso.inv) ≫ g := Eq.symm (NatTrans.assoc _ _ _)
-              let eq4 : (iso.hom ≫ iso.inv) ≫ g = NatTrans.id X ≫ g := congrArg (fun x => x ≫ g) iso.hom_inv_id
-              let eq5 : NatTrans.id X ≫ g = g := NatTrans.id_comp g
-              Eq.trans eq1 (Eq.trans eq2 (Eq.trans eq3 (Eq.trans eq4 eq5)))⟩ }
-      indecomposable :=
-        { not_initial := fun I hI iso_I =>
-            let iso_yP : y C P_obj ≅ I := iso.symm.trans iso_I
-            nomatch ((hI.to (pzero C)).app P_obj (iso_yP.hom.app P_obj (C.id P_obj)) : PEmpty)
-          coprod_decomp := fun A B f =>
-            let f' := iso.inv ≫ f
-            match (representable_is_indecomposable P_obj).coprod_decomp A B f' with
-            | Sum.inl ⟨g', hg'⟩ => Sum.inl ⟨iso.hom ≫ g',
-                let eq1 : f = NatTrans.id X ≫ f := Eq.symm (NatTrans.id_comp f)
-                let eq2 : NatTrans.id X ≫ f = (iso.hom ≫ iso.inv) ≫ f := congrArg (fun x => x ≫ f) (Eq.symm iso.hom_inv_id)
-                let eq3 : (iso.hom ≫ iso.inv) ≫ f = iso.hom ≫ (iso.inv ≫ f) := NatTrans.assoc _ _ _
-                let eq4 : iso.hom ≫ (iso.inv ≫ f) = iso.hom ≫ f' := rfl
-                let eq5 : iso.hom ≫ f' = iso.hom ≫ (g' ≫ presheafCoprodInl C A B) := congrArg (fun x => iso.hom ≫ x) hg'
-                let eq6 : iso.hom ≫ (g' ≫ presheafCoprodInl C A B) = (iso.hom ≫ g') ≫ presheafCoprodInl C A B := Eq.symm (NatTrans.assoc _ _ _)
-                Eq.trans eq1 (Eq.trans eq2 (Eq.trans eq3 (Eq.trans eq4 (Eq.trans eq5 eq6))))
-              ⟩
-            | Sum.inr ⟨g', hg'⟩ => Sum.inr ⟨iso.hom ≫ g',
-                let eq1 : f = NatTrans.id X ≫ f := Eq.symm (NatTrans.id_comp f)
-                let eq2 : NatTrans.id X ≫ f = (iso.hom ≫ iso.inv) ≫ f := congrArg (fun x => x ≫ f) (Eq.symm iso.hom_inv_id)
-                let eq3 : (iso.hom ≫ iso.inv) ≫ f = iso.hom ≫ (iso.inv ≫ f) := NatTrans.assoc _ _ _
-                let eq4 : iso.hom ≫ (iso.inv ≫ f) = iso.hom ≫ f' := rfl
-                let eq5 : iso.hom ≫ f' = iso.hom ≫ (g' ≫ presheafCoprodInr C A B) := congrArg (fun x => iso.hom ≫ x) hg'
-                let eq6 : iso.hom ≫ (g' ≫ presheafCoprodInr C A B) = (iso.hom ≫ g') ≫ presheafCoprodInr C A B := Eq.symm (NatTrans.assoc _ _ _)
-                Eq.trans eq1 (Eq.trans eq2 (Eq.trans eq3 (Eq.trans eq4 (Eq.trans eq5 eq6))))
-              ⟩ } }
-
-structure RepresentableCover {P : Type u} {C : Category.{v, u} P} (X : PresheafCategory P C) : Type (max u (v + 1)) where
-  P_obj : P
-  cover : y C P_obj ⟶ X
-  epi_cover : IsEpimorphism cover
-  section_morphism : X ⟶ y C P_obj
-  is_section : section_morphism ≫ cover = NatTrans.id X
-  is_retract : cover ≫ section_morphism = NatTrans.id (y C P_obj)
-
-def ind_proj_to_representable {P : Type u} {C : Category.{v, u} P} (X : PresheafCategory P C) (hIP : IsIndecomposableProjective X)
-    (cov : RepresentableCover X) : IsRepresentable X :=
-  { P_obj := cov.P_obj
-    iso :=
-      { hom := cov.section_morphism
-        inv := cov.cover
-        hom_inv_id := cov.is_section
-        inv_hom_id := cov.is_retract } }
-
-structure IndProjEquivalence {P : Type u} {C : Category.{v, u} P} (X : PresheafCategory P C) : Type (max u (v + 1)) where
-  to_ind_proj : IsRepresentable X → IsIndecomposableProjective X
-  from_ind_proj : IsIndecomposableProjective X → RepresentableCover X → IsRepresentable X
-
-def indProjEquivalenceInstance {P : Type u} {C : Category.{v, u} P} (X : PresheafCategory P C) : IndProjEquivalence X :=
-  { to_ind_proj := representable_to_ind_proj X
-    from_ind_proj := fun hIP cov => ind_proj_to_representable X hIP cov }
-
-
-structure IsCompactObject {P : Type u} {C : Category.{v, u} P} (K : PresheafCategory P C) : Type (max u (v + 1)) where
-  P_obj : P
-  cover : y C P_obj ⟶ K
-  epi_cover : IsEpimorphism cover
-
-structure IsPullbackSquare {P : Type u} {C : Category.{v, u} P} {K Y X K' : PresheafCategory P C}
-    (fst : K' ⟶ K) (snd : K' ⟶ Y) (g : K ⟶ X) (f : Y ⟶ X) : Type (max u (v + 1)) where
-  w : fst ≫ g = snd ≫ f
-  is_limit : ∀ {T : PresheafCategory P C} (h1 : T ⟶ K) (h2 : T ⟶ Y),
-    h1 ≫ g = h2 ≫ f →
-    { k : T ⟶ K' // k ≫ fst = h1 ∧ k ≫ snd = h2 ∧ ∀ (k' : T ⟶ K'), k' ≫ fst = h1 ∧ k' ≫ snd = h2 → k' = k }
-
-structure IsCompactMorphism {P : Type u} {C : Category.{v, u} P} {Y X : PresheafCategory P C} (f : Y ⟶ X) : Type (max u (v + 1)) where
-  pullback_compact : ∀ (K : PresheafCategory P C) (hK : IsCompactObject K) (g : K ⟶ X)
-    (K' : PresheafCategory P C) (fst : K' ⟶ K) (snd : K' ⟶ Y),
-    IsPullbackSquare fst snd g f → IsCompactObject K'
-
-structure IsCoherentObject {P : Type u} {C : Category.{v, u} P} (C_presheaf : PresheafCategory P C) : Type (max u (v + 1)) where
-  compact : IsCompactObject C_presheaf
-  compact_diagonal : IsCompactMorphism (presheafLift C (NatTrans.id C_presheaf) (NatTrans.id C_presheaf))
-
-def representable_is_compact {P : Type u} {C : Category.{v, u} P} (P_obj : P) : IsCompactObject (y C P_obj) :=
-  { P_obj := P_obj
-    cover := NatTrans.id (y C P_obj)
-    epi_cover :=
-      { right_cancellation := fun g h hgh =>
-          let eq1 : g = NatTrans.id _ ≫ g := Eq.symm (NatTrans.id_comp g)
-          let eq2 : NatTrans.id _ ≫ g = NatTrans.id _ ≫ h := hgh
-          let eq3 : NatTrans.id _ ≫ h = h := NatTrans.id_comp h
-          Eq.trans eq1 (Eq.trans eq2 eq3)
-        surjective_app := fun P_curr b => ⟨b, rfl⟩ } }
-
-structure CptObject {P : Type u} {C : Category.{v, u} P} : Type (max u (v + 1)) where
-  obj : PresheafCategory P C
-  property : IsCompactObject obj
-
-structure CohObject {P : Type u} {C : Category.{v, u} P} : Type (max u (v + 1)) where
-  obj : PresheafCategory P C
-  property : IsCoherentObject obj
-
-/-!
-## Sheaves on Assemblies Sh(Asm) および Proposition 1
--/
-
-structure IsRegularCoveringSieve {P : Type u} {C : Category.{v, u} P} {A : PresheafCategory P C} (S : PresheafCategory P C)
-    (m : S ⟶ A) : Type (max u (v + 1)) where
-  P_obj : P
-  cover : y C P_obj ⟶ A
-  epi_cover : IsEpimorphism cover
-  lift_m : y C P_obj ⟶ S
-  fac : lift_m ≫ m = cover
-
-structure IsSheafAsm {P : Type u} {C : Category.{v, u} P} (F : PresheafCategory P C) : Type (max u (v + 1)) where
-  sheaf_condition : ∀ (A S : PresheafCategory P C) (m : S ⟶ A),
-    IsRegularCoveringSieve S m →
-    ∀ (f : S ⟶ F), { k : A ⟶ F // m ≫ k = f ∧ ∀ (k' : A ⟶ F), m ≫ k' = f → k' = k }
-
-structure ShAsmEquivalence {P : Type u} {C : Category.{v, u} P} : Type (max u (v + 1)) where
-  to_sheaf : PresheafCategory P C → Σ (F : PresheafCategory P C), IsSheafAsm F
-  from_sheaf : (Σ (F : PresheafCategory P C), IsSheafAsm F) → PresheafCategory P C
-  left_inv : ∀ (X : PresheafCategory P C), from_sheaf (to_sheaf X) = X
-
-structure IsKernelPair {P : Type u} {C : Category.{v, u} P} {R R' E : PresheafCategory P C} (q1 q2 : R' ⟶ R) (p : R ⟶ E) : Type (max u (v + 1)) where
-  w : q1 ≫ p = q2 ≫ p
-  is_limit : ∀ {T : PresheafCategory P C} (h1 h2 : T ⟶ R),
-    h1 ≫ p = h2 ≫ p →
-    { k : T ⟶ R' // k ≫ q1 = h1 ∧ k ≫ q2 = h2 ∧ ∀ (k' : T ⟶ R'), k' ≫ q1 = h1 ∧ k' ≫ q2 = h2 → k' = k }
-
-structure IsExactPresentation {P : Type u} {C : Category.{v, u} P} (E : PresheafCategory P C) : Type (max u (v + 1)) where
-  R : P
-  R' : P
-  q1 : y C R' ⟶ y C R
-  q2 : y C R' ⟶ y C R
-  p : y C R ⟶ E
-  epi_p : IsEpimorphism p
-  kernel_pair : IsKernelPair q1 q2 p
-  coequalizer : IsCoequalizer q1 q2 p
-
-structure HasExactPresentationByAsm {P : Type u} {C : Category.{v, u} P} (E : PresheafCategory P C) : Type (max u (v + 1)) where
-  A : PresheafCategory P C
-  R' : PresheafCategory P C
-  q1 : R' ⟶ A
-  q2 : R' ⟶ A
-  p : A ⟶ E
-  asm_A : IsAssembly A
-  asm_R' : IsAssembly R'
-  epi_p : IsEpimorphism p
-  kernel_pair : IsKernelPair q1 q2 p
-  coequalizer : IsCoequalizer q1 q2 p
-
-structure Proposition1Statement {P : Type u} {C : Category.{v, u} P} (E : PresheafCategory P C) : Type (max u (v + 1)) where
-  exact_completion_to_presentation : IsEffObject E → HasExactPresentationByAsm E
-  presentation_to_exact_completion : HasExactPresentationByAsm E → IsEffObject E
-
-
-def assembly_is_compact {P : Type u} {C : Category.{v, u} P} (X : PresheafCategory P C) (hA : IsAssembly X) : IsCompactObject X :=
-  { P_obj := hA.P_obj
-    cover := hA.e
-    epi_cover := hA.epi_e }
-
-def epi_comp {P : Type u} {C : Category.{v, u} P} {A1 A2 A3 : PresheafCategory P C} (f : A1 ⟶ A2) (g : A2 ⟶ A3)
-    (ef : IsEpimorphism f) (eg : IsEpimorphism g) : IsEpimorphism (f ≫ g) :=
-  { right_cancellation := fun {C_p} h1 h2 h_eq =>
-      eg.right_cancellation h1 h2 (ef.right_cancellation (g ≫ h1) (g ≫ h2)
-        (let eq1 : f ≫ g ≫ h1 = (f ≫ g) ≫ h1 := Eq.symm (NatTrans.assoc _ _ _)
-         let eq2 : (f ≫ g) ≫ h1 = (f ≫ g) ≫ h2 := h_eq
-         let eq3 : (f ≫ g) ≫ h2 = f ≫ g ≫ h2 := NatTrans.assoc _ _ _
-         Eq.trans eq1 (Eq.trans eq2 eq3)))
-    surjective_app := fun P_obj c =>
-      let ⟨b, hb⟩ := eg.surjective_app P_obj c
-      let ⟨a, ha⟩ := ef.surjective_app P_obj b
-      ⟨a,
-        let eq1 : (f ≫ g).app P_obj a = g.app P_obj (f.app P_obj a) := rfl
-        let eq2 : g.app P_obj (f.app P_obj a) = g.app P_obj b := congrArg (g.app P_obj) ha
-        let eq3 : g.app P_obj b = c := hb
-        Eq.trans eq1 (Eq.trans eq2 eq3)⟩ }
-
-def exact_presentation_is_compact {P : Type u} {C : Category.{v, u} P} (C_presheaf : PresheafCategory P C)
-    (h : HasExactPresentationByAsm C_presheaf) : IsCompactObject C_presheaf :=
-  let asm_A_compact := assembly_is_compact h.A h.asm_A
-  { P_obj := asm_A_compact.P_obj
-    cover := asm_A_compact.cover ≫ h.p
-    epi_cover := epi_comp asm_A_compact.cover h.p asm_A_compact.epi_cover h.epi_p }
-
-structure Prop2Lift {P : Type u} {C : Category.{v, u} P} (C_presheaf K : PresheafCategory P C) (c : K ⟶ presheafProd C C_presheaf C_presheaf)
-    (B : PresheafCategory P C) (p : B ⟶ C_presheaf) : Type (max u (v + 1)) where
-  P_obj : P
-  k : y C P_obj ⟶ K
-  epi_k : IsEpimorphism k
-  l : y C P_obj ⟶ presheafProd C B B
-  fac : NatTrans.comp l (presheafLift C (NatTrans.comp (presheafFst C) p) (NatTrans.comp (presheafSnd C) p)) = NatTrans.comp k c
-
-structure Prop2CoveredByLStarA {P : Type u} {C : Category.{v, u} P} (K' A' : PresheafCategory P C) : Type (max u (v + 1)) where
-  cover_morphism : A' ⟶ K'
-  is_epi : IsEpimorphism cover_morphism
-
-structure Prop2LStarAIsAssembly {P : Type u} {C : Category.{v, u} P} (A' : PresheafCategory P C) : Type (max u (v + 1)) where
-  is_asm : IsAssembly A'
-
-structure CompactDiagonalOfExactPresentation {P : Type u} {C : Category.{v, u} P} (C_presheaf : PresheafCategory P C) (h : HasExactPresentationByAsm C_presheaf) : Type (max u (v + 1)) where
-  lift_exists : ∀ (K : PresheafCategory P C) (hK : IsCompactObject K) (c : K ⟶ presheafProd C C_presheaf C_presheaf),
-    Prop2Lift C_presheaf K c h.A h.p
-  pullback_covered : ∀ (K : PresheafCategory P C) (hK : IsCompactObject K) (c : K ⟶ presheafProd C C_presheaf C_presheaf)
-    (K' A' : PresheafCategory P C) (lift : Prop2Lift C_presheaf K c h.A h.p),
-    Prop2CoveredByLStarA K' A'
-  pullback_is_assembly : ∀ (K : PresheafCategory P C) (hK : IsCompactObject K) (c : K ⟶ presheafProd C C_presheaf C_presheaf)
-    (K' A' : PresheafCategory P C) (lift : Prop2Lift C_presheaf K c h.A h.p),
-    Prop2LStarAIsAssembly A'
-
-structure Proposition2BackwardStatement {P : Type u} {C : Category.{v, u} P} (C_presheaf : PresheafCategory P C) : Type (max u (v + 1)) where
-  exact_presentation_to_coherent : HasExactPresentationByAsm C_presheaf → IsCoherentObject C_presheaf
-
-structure Proposition2Equivalence {P : Type u} {C : Category.{v, u} P} (C_presheaf : PresheafCategory P C) : Type (max u (v + 1)) where
-  forward_dir : IsCoherentObject C_presheaf → HasExactPresentationByAsm C_presheaf
-  backward_dir : HasExactPresentationByAsm C_presheaf → IsCoherentObject C_presheaf
-
-
-structure CryptoContext (P : Type u) (C : Category.{v, u} P) where
-  V : PresheafCategory P C
-  M : PresheafCategory P C
-  R : PresheafCategory P C
-  S : PresheafCategory P C
-  G_0 : PresheafCategory P C
-
-  isRep_V : IsRepresentable V
-
-  isCoh_M : IsCoherentObject M
-
-  isAsm_S : IsAssembly S
-
-  isAsm_R : IsAssembly R
-
-  isAsm_G_0 : IsAssembly G_0
-
-  isMonic_A : ∀ {X : PresheafCategory P C} {x y : X ⟶ M} (p q : x = y), p = q
-  q_map : ∀ {X : PresheafCategory P C}, (X ⟶ G_0) → (X ⟶ M)
-  Φ : ∀ {X : PresheafCategory P C}, (X ⟶ M) → (X ⟶ S) → (X ⟶ G_0)
-  sec_Φ : ∀ {X : PresheafCategory P C} (n : X ⟶ M) (s : X ⟶ S), q_map (Φ n s) = n
-  f_r : ∀ {X : PresheafCategory P C}, (X ⟶ R) → (X ⟶ G_0) → (X ⟶ G_0)
-  f_r_inv : ∀ {X : PresheafCategory P C}, (X ⟶ R) → (X ⟶ G_0) → (X ⟶ G_0)
-  ϵ_r : ∀ {X : PresheafCategory P C} (r : X ⟶ R) (x : X ⟶ G_0), f_r_inv r (f_r r x) = x
-
-def Φ_inv {P : Type u} {C : Category.{v, u} P} (ctx : CryptoContext P C) {X : PresheafCategory P C} (p : X ⟶ ctx.G_0) (s : X ⟶ ctx.S) : X ⟶ ctx.M :=
-  ctx.q_map p
-
-def Theorem_iso_Φ {P : Type u} {C : Category.{v, u} P} (ctx : CryptoContext P C) {X : PresheafCategory P C} (n : X ⟶ ctx.M) (s : X ⟶ ctx.S) : Φ_inv ctx (ctx.Φ n s) s = n :=
-  ctx.sec_Φ n s
-
-def Cipher {P : Type u} {C : Category.{v, u} P} (ctx : CryptoContext P C) {X : PresheafCategory P C} (n : X ⟶ ctx.M) (s : X ⟶ ctx.S) (r : X ⟶ ctx.R) : X ⟶ ctx.G_0 :=
-  ctx.f_r r (ctx.Φ n s)
-
-def Decipher {P : Type u} {C : Category.{v, u} P} (ctx : CryptoContext P C) {X : PresheafCategory P C} (ρ : X ⟶ ctx.G_0) (s : X ⟶ ctx.S) (r : X ⟶ ctx.R) : X ⟶ ctx.M :=
-  Φ_inv ctx (ctx.f_r_inv r ρ) s
-
-
-def Theorem_Correctness {P : Type u} {C : Category.{v, u} P} (ctx : CryptoContext P C) {X : PresheafCategory P C} (n : X ⟶ ctx.M) (s : X ⟶ ctx.S) (r : X ⟶ ctx.R) :
-    Decipher ctx (Cipher ctx n s r) s r = n :=
-  Eq.trans
-    (@Eq.rec (X ⟶ ctx.G_0)
-      (ctx.f_r_inv r (ctx.f_r r (ctx.Φ n s)))
-      (fun (x : X ⟶ ctx.G_0) _ => ctx.q_map (ctx.f_r_inv r (ctx.f_r r (ctx.Φ n s))) = ctx.q_map x)
-      rfl
-      (ctx.Φ n s)
-      (ctx.ϵ_r r (ctx.Φ n s))
-    )
-    (Theorem_iso_Φ ctx n s)
-
-def Theorem_Uniqueness_M {P : Type u} {C : Category.{v, u} P} (ctx : CryptoContext P C) {X : PresheafCategory P C} (n : X ⟶ ctx.M) (s : X ⟶ ctx.S) (r : X ⟶ ctx.R)
-    (p1 p2 : Decipher ctx (Cipher ctx n s r) s r = n) : p1 = p2 :=
-  ctx.isMonic_A p1 p2
+/-! ### Base types and axioms (Parts I - V) -/
+
+crypto_topos axiom V : Type
+crypto_topos axiom M : Type
+crypto_topos axiom R : Type
+crypto_topos axiom S : Type
+crypto_topos axiom G₀ : Type
+
+/-- Axiom [Part I.7]: The message space `M` is 0-truncated (a Set). -/
+crypto_topos axiom isMonic_Δ (x y : M) (p q : Identity x y) : Identity p q
+
+/-- [Part IV] Adjunction maps. -/
+crypto_topos axiom q_map : G₀ → M
+crypto_topos axiom Φ : M → S → G₀
+
+/-- Adjunction core identity (foundation for `Theorem_iso_Φ`). -/
+crypto_topos axiom sec_Φ (n : M) (s : S) : Identity (q_map (Φ n s)) n
+
+/-- [Part IV.2-3] Decoding map. -/
+crypto_topos def Φ_inv (ρ : G₀) (_s : S) : M := q_map ρ
+
+/-- Isomorphism proof showing that `Φ_inv` is a retraction of `Φ`. -/
+crypto_topos def Theorem_iso_Φ (n : M) (s : S) : Identity (Φ_inv (Φ n s) s) n :=
+  sec_Φ n s
+
+/-- [Part V] Key-based encryption/decryption actions. -/
+crypto_topos axiom f_r : R → G₀ → G₀
+crypto_topos axiom f_r_inv : R → G₀ → G₀
+
+/-- Encryption algorithm. -/
+crypto_topos def Cipher (n : M) (s : S) (r : R) : G₀ :=
+  f_r r (Φ n s)
+
+/-- Decryption algorithm. -/
+crypto_topos def Decipher (ρ : G₀) (s : S) (r : R) : M :=
+  Φ_inv (f_r_inv r ρ) s
+
+
+/-! ### Part VI: Homotopical Correctness and Identity Proofs -/
+
+/-- Retraction path of the key action (ϵ_r). -/
+crypto_topos axiom ϵ_r (r : R) (x : G₀) : Identity (f_r_inv r (f_r r x)) x
+
+/-- Proof of cryptographic correctness (Theorem_Correctness).
+    Transports the retraction path along `q_map` using `Identity.rec` with an
+    explicit motive, then composes it with `Theorem_iso_Φ` via trans₀. -/
+crypto_topos def Theorem_Correctness (n : M) (s : S) (r : R) :
+  Identity (Decipher (Cipher n s r) s r) n :=
+  (@Identity.rec
+    G₀
+    (f_r_inv r (f_r r (Φ n s)))
+    (fun (x : G₀) (_ : Identity (f_r_inv r (f_r r (Φ n s))) x) =>
+      Identity (q_map (f_r_inv r (f_r r (Φ n s)))) (q_map x))
+    (Identity.refl (q_map (f_r_inv r (f_r r (Φ n s)))))
+    (Φ n s)
+    (ϵ_r r (Φ n s))
+  ).trans₀ (Theorem_iso_Φ n s)
+
+/-- Uniqueness of correctness proofs (Theorem_Uniqueness_M).
+    Any two correctness proofs `p` and `q` are equal since `M` is a 0-type. -/
+crypto_topos def Theorem_Uniqueness_M (n : M) (s : S) (r : R)
+  (p q : Identity (Decipher (Cipher n s r) s r) n) : Identity p q :=
+  isMonic_Δ
+    (Decipher (Cipher n s r) s r)
+    n
+    p
+    q
 
 end CryptoTopos
