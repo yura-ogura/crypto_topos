@@ -5,7 +5,7 @@ Formally verified mathematical structures and cryptographic protocols using HoTT
 ## Overview
 This repository contains formal proofs of Cryptographic Topos.
 
-##Prerequisites
+## Prerequisites
 - Lean 4 ('v4.25.0-rc2')
 - 【HoTTLean】(https://github.com/sinhp/HoTTLean) (Fetched automatically via Lake)
 
