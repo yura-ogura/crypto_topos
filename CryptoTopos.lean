@@ -17,3 +17,4 @@ import CryptoTopos.Frontend
 import CryptoTopos.Interpretation
 import CryptoTopos.Model
 import CryptoTopos.SemanticProofs
+import CryptoTopos.main
