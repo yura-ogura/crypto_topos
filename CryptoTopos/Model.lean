@@ -987,3 +987,4 @@ lemma geodesic_id (h_g_primitive : ∀ (v : ZMod q), v ≠ 0 → ∃ (x : Nat), 
   ⟩
 
 end CryptoTopos
+
