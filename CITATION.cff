@@ -1,0 +1,53 @@
+cff-version: 1.2.0
+message: "If you use this software or reference these works, please cite them as below."
+authors:
+  - name: "yura-ogura"
+title: "crypto_topos"
+date-released: 2026-08-04
+url: "https://github.com/yura-ogura/crypto_topos"
+preferred-citation:
+  type: article
+  authors:
+    - family-names: "Awodey"
+      given-names: "Steve"
+    - family-names: "Emmenegger"
+      given-names: "Jacopo"
+  title: "Toward the effective 2-topos"
+  journal: "Mathematical Structures in Computer Science"
+  volume: 35
+  pages: "e32"
+  year: 2025
+  doi: "10.1017/S0960129525100352"
+references:
+  - type: article
+    authors:
+      - family-names: "Awodey"
+        given-names: "Steve"
+      - family-names: "Hua"
+        given-names: "Joseph"
+    title: "Path Types in Algebraic Type Theory"
+    journal: "arXiv preprint arXiv:2601.06567"
+    year: 2026
+  - type: conference-paper
+    authors:
+      - family-names: "Nawrocki"
+        given-names: "Wojciech"
+      - family-names: "Hua"
+        given-names: "Joseph"
+      - family-names: "Carneiro"
+        given-names: "Mario"
+      - family-names: "Xu"
+        given-names: "Yiming"
+      - family-names: "Woolfson"
+        given-names: "Spencer"
+      - family-names: "Rong"
+        given-names: "Shuge"
+      - family-names: "Hazratpour"
+        given-names: "Sina"
+      - family-names: "Awodey"
+        given-names: "Steve"
+    title: "A Certifying Proof Assistant for Synthetic Mathematics in Lean"
+    collection-title: "Proceedings of the 15th ACM SIGPLAN International Conference on Certified Programs and Proofs (CPP '26)"
+    pages: "88-103"
+    year: 2026
+    doi: "10.1145/3779031.3779087"
