@@ -299,11 +299,11 @@ syntax "prove_interpretation_branch " term:max term:max term:max term:max term:m
 macro_rules
   | `(tactic| prove_interpretation_branch $seq $sem_obj $sem_Ty $tp_comm $of_type) =>
     `(tactic| (
-      refine Exists.intro (cast_sem_to_I $seq rfl$sem_obj) (And.intro ?_ ?_)
+      refine Exists.intro (cast_sem_to_I ($seq) rfl ($sem_obj)) (And.intro ?_ ?_)
       · first
           | rfl
           | (unfold crypto_topos_interpretation; simp)
-      · refine Exists.intro $sem_Ty (And.intro ?_ ?_)
+      · refine Exists.intro ($sem_Ty) (And.intro ?_ ?_)
         · have h_of := $of_type
           try dsimp only
           rw [← h_of]
@@ -313,7 +313,7 @@ macro_rules
         · unfold cast_sem_to_I
           simp only [CategoryTheory.eqToHom_refl, CategoryTheory.Category.comp_id,
             CategoryTheory.Category.id_comp, CategoryTheory.Category.assoc]
-          exact $tp_comm))
+          exact ($tp_comm)))
 
 instance crypto_topos_interpretation_wf (seq : UHomSeq P_cat) [UHomSeq.PiSeq seq]
   [UHomSeq.SigSeq seq] [UHomSeq.IdSeq seq] [CryptoSemanticModel seq]
