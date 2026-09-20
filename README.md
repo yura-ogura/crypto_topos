@@ -61,7 +61,7 @@ $$\text{interpTm}(\text{deriv}) \gg (M_l).\text{tp} = \text{interpTy}(\text{deri
 
 As a Proof of Concept (PoC), this framework currently abstracts certain complex type-theoretic and categorical formations (e.g., deeply nested $\Sigma$-types and presheaf limits) into `axiom` definitions to ensure computational feasibility in Lean 4 (avoiding AST explosion and timeout limits). 
 
-Future milestones intended for ecosystem grants include:
+Future milestones include:
 1. Replacing intermediate `axiom` interfaces with constructed instances where computationally viable.
 2. Extending the $\mathbb{Z}_q$ algebraic masking to support non-linear arithmetic circuits (e.g., PlonK / Kimchi).
 3. Developing developer-friendly tooling to generate verified ZK-circuit representations directly from the `crypto_topos` DSL.
