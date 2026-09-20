@@ -18,7 +18,7 @@ import Lean
 import CryptoTopos.SemanticProofs
 
 set_option linter.unusedVariables false
-set_option linter.unusedSectionVars false -- 未使用セクション変数の警告を抑制
+set_option linter.unusedSectionVars false
 set_option maxRecDepth 50000
 set_option maxHeartbeats 0
 
@@ -33,12 +33,7 @@ universe u v
 
 variable {P_cat : Type u} [Category.{v, u} P_cat] [SmallCategory P_cat] [ChosenTerminal P_cat]
 
--- ============================================================================
--- 意味論的実体（1〜20）および証明リフトの完全なクラス化（axiomおよびsorryの完全排除）
--- ============================================================================
-
 class CryptoSemanticModel (seq : UHomSeq P_cat) [UHomSeq.PiSeq seq] [UHomSeq.SigSeq seq] [UHomSeq.IdSeq seq] where
-  -- 【1】 CryptoIdentity
   CryptoIdentity_type : SynthLean.Expr Lean.Name
   CryptoIdentity_type_closed : SynthLean.Expr.isClosed 0 CryptoIdentity_type = true
   sem_CryptoIdentity_Ty {h0 : 0 < seq.length + 1} : yoneda.obj seq.nilCObj.fst ⟶ (seq.objs 0 h0).Ty
@@ -46,7 +41,6 @@ class CryptoSemanticModel (seq : UHomSeq P_cat) [UHomSeq.PiSeq seq] [UHomSeq.Sig
   sem_CryptoIdentity_tp_comm {h0 : 0 < seq.length + 1} : sem_CryptoIdentity_obj ≫ (seq.objs 0 h0).tp = sem_CryptoIdentity_Ty
   CryptoIdentity_ofType (I : Interpretation Lean.Name seq) {h0 : 0 < seq.length + 1} : sem_CryptoIdentity_Ty = I.ofType seq.nilCObj 0 CryptoIdentity_type h0
 
-  -- 【2】 Empty_obj
   Empty_obj_type : SynthLean.Expr Lean.Name
   Empty_obj_type_closed : SynthLean.Expr.isClosed 0 Empty_obj_type = true
   sem_Empty_obj_Ty {h0 : 0 < seq.length + 1} : yoneda.obj seq.nilCObj.fst ⟶ (seq.objs 0 h0).Ty
@@ -54,7 +48,6 @@ class CryptoSemanticModel (seq : UHomSeq P_cat) [UHomSeq.PiSeq seq] [UHomSeq.Sig
   sem_Empty_obj_tp_comm {h0 : 0 < seq.length + 1} : sem_Empty_obj_obj ≫ (seq.objs 0 h0).tp = sem_Empty_obj_Ty
   Empty_obj_ofType (I : Interpretation Lean.Name seq) {h0 : 0 < seq.length + 1} : sem_Empty_obj_Ty = I.ofType seq.nilCObj 0 Empty_obj_type h0
 
-  -- 【3】 Unit_obj
   Unit_obj_type : SynthLean.Expr Lean.Name
   Unit_obj_type_closed : SynthLean.Expr.isClosed 0 Unit_obj_type = true
   sem_Unit_obj_Ty {h0 : 0 < seq.length + 1} : yoneda.obj seq.nilCObj.fst ⟶ (seq.objs 0 h0).Ty
@@ -62,7 +55,6 @@ class CryptoSemanticModel (seq : UHomSeq P_cat) [UHomSeq.PiSeq seq] [UHomSeq.Sig
   sem_Unit_obj_tp_comm {h0 : 0 < seq.length + 1} : sem_Unit_obj_obj ≫ (seq.objs 0 h0).tp = sem_Unit_obj_Ty
   Unit_obj_ofType (I : Interpretation Lean.Name seq) {h0 : 0 < seq.length + 1} : sem_Unit_obj_Ty = I.ofType seq.nilCObj 0 Unit_obj_type h0
 
-  -- 【4】 Coprod
   Coprod_type : SynthLean.Expr Lean.Name
   Coprod_type_closed : SynthLean.Expr.isClosed 0 Coprod_type = true
   sem_Coprod_Ty {h0 : 0 < seq.length + 1} : yoneda.obj seq.nilCObj.fst ⟶ (seq.objs 0 h0).Ty
@@ -70,7 +62,6 @@ class CryptoSemanticModel (seq : UHomSeq P_cat) [UHomSeq.PiSeq seq] [UHomSeq.Sig
   sem_Coprod_tp_comm {h0 : 0 < seq.length + 1} : sem_Coprod_obj ≫ (seq.objs 0 h0).tp = sem_Coprod_Ty
   Coprod_ofType (I : Interpretation Lean.Name seq) {h0 : 0 < seq.length + 1} : sem_Coprod_Ty = I.ofType seq.nilCObj 0 Coprod_type h0
 
-  -- 【5】 Category
   Category_type : SynthLean.Expr Lean.Name
   Category_type_closed : SynthLean.Expr.isClosed 0 Category_type = true
   sem_Category_Ty {h0 : 0 < seq.length + 1} : yoneda.obj seq.nilCObj.fst ⟶ (seq.objs 0 h0).Ty
@@ -78,7 +69,6 @@ class CryptoSemanticModel (seq : UHomSeq P_cat) [UHomSeq.PiSeq seq] [UHomSeq.Sig
   sem_Category_tp_comm {h0 : 0 < seq.length + 1} : sem_Category_obj ≫ (seq.objs 0 h0).tp = sem_Category_Ty
   Category_ofType (I : Interpretation Lean.Name seq) {h0 : 0 < seq.length + 1} : sem_Category_Ty = I.ofType seq.nilCObj 0 Category_type h0
 
-  -- 【6】 Presheaf
   Presheaf_type : SynthLean.Expr Lean.Name
   Presheaf_type_closed : SynthLean.Expr.isClosed 0 Presheaf_type = true
   sem_Presheaf_Ty {h0 : 0 < seq.length + 1} : yoneda.obj seq.nilCObj.fst ⟶ (seq.objs 0 h0).Ty
@@ -86,7 +76,6 @@ class CryptoSemanticModel (seq : UHomSeq P_cat) [UHomSeq.PiSeq seq] [UHomSeq.Sig
   sem_Presheaf_tp_comm {h0 : 0 < seq.length + 1} : sem_Presheaf_obj ≫ (seq.objs 0 h0).tp = sem_Presheaf_Ty
   Presheaf_ofType (I : Interpretation Lean.Name seq) {h0 : 0 < seq.length + 1} : sem_Presheaf_Ty = I.ofType seq.nilCObj 0 Presheaf_type h0
 
-  -- 【7】 NatTrans
   NatTrans_type : SynthLean.Expr Lean.Name
   NatTrans_type_closed : SynthLean.Expr.isClosed 0 NatTrans_type = true
   sem_NatTrans_Ty {h0 : 0 < seq.length + 1} : yoneda.obj seq.nilCObj.fst ⟶ (seq.objs 0 h0).Ty
@@ -94,7 +83,6 @@ class CryptoSemanticModel (seq : UHomSeq P_cat) [UHomSeq.PiSeq seq] [UHomSeq.Sig
   sem_NatTrans_tp_comm {h0 : 0 < seq.length + 1} : sem_NatTrans_obj ≫ (seq.objs 0 h0).tp = sem_NatTrans_Ty
   NatTrans_ofType (I : Interpretation Lean.Name seq) {h0 : 0 < seq.length + 1} : sem_NatTrans_Ty = I.ofType seq.nilCObj 0 NatTrans_type h0
 
-  -- 【8】 PresheafIso
   PresheafIso_type : SynthLean.Expr Lean.Name
   PresheafIso_type_closed : SynthLean.Expr.isClosed 0 PresheafIso_type = true
   sem_PresheafIso_Ty {h0 : 0 < seq.length + 1} : yoneda.obj seq.nilCObj.fst ⟶ (seq.objs 0 h0).Ty
@@ -102,7 +90,6 @@ class CryptoSemanticModel (seq : UHomSeq P_cat) [UHomSeq.PiSeq seq] [UHomSeq.Sig
   sem_PresheafIso_tp_comm {h0 : 0 < seq.length + 1} : sem_PresheafIso_obj ≫ (seq.objs 0 h0).tp = sem_PresheafIso_Ty
   PresheafIso_ofType (I : Interpretation Lean.Name seq) {h0 : 0 < seq.length + 1} : sem_PresheafIso_Ty = I.ofType seq.nilCObj 0 PresheafIso_type h0
 
-  -- 【9】 yObj
   yObj_type : SynthLean.Expr Lean.Name
   yObj_type_closed : SynthLean.Expr.isClosed 0 yObj_type = true
   sem_yObj_Ty {h0 : 0 < seq.length + 1} : yoneda.obj seq.nilCObj.fst ⟶ (seq.objs 0 h0).Ty
@@ -110,7 +97,6 @@ class CryptoSemanticModel (seq : UHomSeq P_cat) [UHomSeq.PiSeq seq] [UHomSeq.Sig
   sem_yObj_tp_comm {h0 : 0 < seq.length + 1} : sem_yObj_obj ≫ (seq.objs 0 h0).tp = sem_yObj_Ty
   yObj_ofType (I : Interpretation Lean.Name seq) {h0 : 0 < seq.length + 1} : sem_yObj_Ty = I.ofType seq.nilCObj 0 yObj_type h0
 
-  -- 【10】 IsEffObject
   IsEffObject_type : SynthLean.Expr Lean.Name
   IsEffObject_type_closed : SynthLean.Expr.isClosed 0 IsEffObject_type = true
   sem_IsEffObject_Ty {h0 : 0 < seq.length + 1} : yoneda.obj seq.nilCObj.fst ⟶ (seq.objs 0 h0).Ty
@@ -118,7 +104,6 @@ class CryptoSemanticModel (seq : UHomSeq P_cat) [UHomSeq.PiSeq seq] [UHomSeq.Sig
   sem_IsEffObject_tp_comm {h0 : 0 < seq.length + 1} : sem_IsEffObject_obj ≫ (seq.objs 0 h0).tp = sem_IsEffObject_Ty
   IsEffObject_ofType (I : Interpretation Lean.Name seq) {h0 : 0 < seq.length + 1} : sem_IsEffObject_Ty = I.ofType seq.nilCObj 0 IsEffObject_type h0
 
-  -- 【11】 InternalGroupoid
   InternalGroupoid_type : SynthLean.Expr Lean.Name
   InternalGroupoid_type_closed : SynthLean.Expr.isClosed 0 InternalGroupoid_type = true
   sem_InternalGroupoid_Ty {h0 : 0 < seq.length + 1} : yoneda.obj seq.nilCObj.fst ⟶ (seq.objs 0 h0).Ty
@@ -126,7 +111,6 @@ class CryptoSemanticModel (seq : UHomSeq P_cat) [UHomSeq.PiSeq seq] [UHomSeq.Sig
   sem_InternalGroupoid_tp_comm {h0 : 0 < seq.length + 1} : sem_InternalGroupoid_obj ≫ (seq.objs 0 h0).tp = sem_InternalGroupoid_Ty
   InternalGroupoid_ofType (I : Interpretation Lean.Name seq) {h0 : 0 < seq.length + 1} : sem_InternalGroupoid_Ty = I.ofType seq.nilCObj 0 InternalGroupoid_type h0
 
-  -- 【12】 CryptoContext
   CryptoContext_type : SynthLean.Expr Lean.Name
   CryptoContext_type_closed : SynthLean.Expr.isClosed 0 CryptoContext_type = true
   sem_CryptoContext_Ty {h0 : 0 < seq.length + 1} : yoneda.obj seq.nilCObj.fst ⟶ (seq.objs 0 h0).Ty
@@ -134,7 +118,6 @@ class CryptoSemanticModel (seq : UHomSeq P_cat) [UHomSeq.PiSeq seq] [UHomSeq.Sig
   sem_CryptoContext_tp_comm {h0 : 0 < seq.length + 1} : sem_CryptoContext_obj ≫ (seq.objs 0 h0).tp = sem_CryptoContext_Ty
   CryptoContext_ofType (I : Interpretation Lean.Name seq) {h0 : 0 < seq.length + 1} : sem_CryptoContext_Ty = I.ofType seq.nilCObj 0 CryptoContext_type h0
 
-  -- 【13】 Cipher
   Cipher_type : SynthLean.Expr Lean.Name
   Cipher_type_closed : SynthLean.Expr.isClosed 0 Cipher_type = true
   sem_Cipher_Ty {h0 : 0 < seq.length + 1} : yoneda.obj seq.nilCObj.fst ⟶ (seq.objs 0 h0).Ty
@@ -142,7 +125,6 @@ class CryptoSemanticModel (seq : UHomSeq P_cat) [UHomSeq.PiSeq seq] [UHomSeq.Sig
   sem_Cipher_tp_comm {h0 : 0 < seq.length + 1} : sem_Cipher_obj ≫ (seq.objs 0 h0).tp = sem_Cipher_Ty
   Cipher_ofType (I : Interpretation Lean.Name seq) {h0 : 0 < seq.length + 1} : sem_Cipher_Ty = I.ofType seq.nilCObj 0 Cipher_type h0
 
-  -- 【14】 Decipher
   Decipher_type : SynthLean.Expr Lean.Name
   Decipher_type_closed : SynthLean.Expr.isClosed 0 Decipher_type = true
   sem_Decipher_Ty {h0 : 0 < seq.length + 1} : yoneda.obj seq.nilCObj.fst ⟶ (seq.objs 0 h0).Ty
@@ -150,7 +132,6 @@ class CryptoSemanticModel (seq : UHomSeq P_cat) [UHomSeq.PiSeq seq] [UHomSeq.Sig
   sem_Decipher_tp_comm {h0 : 0 < seq.length + 1} : sem_Decipher_obj ≫ (seq.objs 0 h0).tp = sem_Decipher_Ty
   Decipher_ofType (I : Interpretation Lean.Name seq) {h0 : 0 < seq.length + 1} : sem_Decipher_Ty = I.ofType seq.nilCObj 0 Decipher_type h0
 
-  -- 【15】 Theorem_Correctness_Path
   Theorem_Correctness_Path_type : SynthLean.Expr Lean.Name
   Theorem_Correctness_Path_type_closed : SynthLean.Expr.isClosed 0 Theorem_Correctness_Path_type = true
   sem_Theorem_Correctness_Path_Ty {h0 : 0 < seq.length + 1} : yoneda.obj seq.nilCObj.fst ⟶ (seq.objs 0 h0).Ty
@@ -158,35 +139,29 @@ class CryptoSemanticModel (seq : UHomSeq P_cat) [UHomSeq.PiSeq seq] [UHomSeq.Sig
   sem_Theorem_Correctness_Path_tp_comm {h0 : 0 < seq.length + 1} : sem_Theorem_Correctness_Path_obj ≫ (seq.objs 0 h0).tp = sem_Theorem_Correctness_Path_Ty
   Theorem_Correctness_Path_ofType (I : Interpretation Lean.Name seq) {h0 : 0 < seq.length + 1} : sem_Theorem_Correctness_Path_Ty = I.ofType seq.nilCObj 0 Theorem_Correctness_Path_type h0
 
-  -- 証明リフト用（共通）
   lift_eq_proof_obj {h0 : 0 < seq.length + 1} (Ty : yoneda.obj seq.nilCObj.fst ⟶ (seq.objs 0 h0).Ty) : yoneda.obj seq.nilCObj.fst ⟶ (seq.objs 0 h0).Tm
   lift_eq_proof_tp_comm {h0 : 0 < seq.length + 1} (Ty : yoneda.obj seq.nilCObj.fst ⟶ (seq.objs 0 h0).Ty) : lift_eq_proof_obj Ty ≫ (seq.objs 0 h0).tp = Ty
 
-  -- 【16】 Cipher_eq
   Cipher_eq_type : SynthLean.Expr Lean.Name
   Cipher_eq_type_closed : SynthLean.Expr.isClosed 0 Cipher_eq_type = true
   sem_Cipher_eq_Ty {h0 : 0 < seq.length + 1} : yoneda.obj seq.nilCObj.fst ⟶ (seq.objs 0 h0).Ty
   Cipher_eq_ofType (I : Interpretation Lean.Name seq) {h0 : 0 < seq.length + 1} : sem_Cipher_eq_Ty = I.ofType seq.nilCObj 0 Cipher_eq_type h0
 
-  -- 【17】 Decipher_eq
   Decipher_eq_type : SynthLean.Expr Lean.Name
   Decipher_eq_type_closed : SynthLean.Expr.isClosed 0 Decipher_eq_type = true
   sem_Decipher_eq_Ty {h0 : 0 < seq.length + 1} : yoneda.obj seq.nilCObj.fst ⟶ (seq.objs 0 h0).Ty
   Decipher_eq_ofType (I : Interpretation Lean.Name seq) {h0 : 0 < seq.length + 1} : sem_Decipher_eq_Ty = I.ofType seq.nilCObj 0 Decipher_eq_type h0
 
-  -- 【18】 Theorem_Correctness_Path_eq
   Theorem_Correctness_Path_eq_type : SynthLean.Expr Lean.Name
   Theorem_Correctness_Path_eq_type_closed : SynthLean.Expr.isClosed 0 Theorem_Correctness_Path_eq_type = true
   sem_Theorem_Correctness_Path_eq_Ty {h0 : 0 < seq.length + 1} : yoneda.obj seq.nilCObj.fst ⟶ (seq.objs 0 h0).Ty
   Theorem_Correctness_Path_eq_ofType (I : Interpretation Lean.Name seq) {h0 : 0 < seq.length + 1} : sem_Theorem_Correctness_Path_eq_Ty = I.ofType seq.nilCObj 0 Theorem_Correctness_Path_eq_type h0
 
-  -- 【19】 Theorem_Correctness_Path_eps0
   Theorem_Correctness_Path_eps0_type : SynthLean.Expr Lean.Name
   Theorem_Correctness_Path_eps0_type_closed : SynthLean.Expr.isClosed 0 Theorem_Correctness_Path_eps0_type = true
   sem_Theorem_Correctness_Path_eps0_Ty {h0 : 0 < seq.length + 1} : yoneda.obj seq.nilCObj.fst ⟶ (seq.objs 0 h0).Ty
   Theorem_Correctness_Path_eps0_ofType (I : Interpretation Lean.Name seq) {h0 : 0 < seq.length + 1} : sem_Theorem_Correctness_Path_eps0_Ty = I.ofType seq.nilCObj 0 Theorem_Correctness_Path_eps0_type h0
 
-  -- 【20】 Theorem_Correctness_Path_eps1
   Theorem_Correctness_Path_eps1_type : SynthLean.Expr Lean.Name
   Theorem_Correctness_Path_eps1_type_closed : SynthLean.Expr.isClosed 0 Theorem_Correctness_Path_eps1_type = true
   sem_Theorem_Correctness_Path_eps1_Ty {h0 : 0 < seq.length + 1} : yoneda.obj seq.nilCObj.fst ⟶ (seq.objs 0 h0).Ty
@@ -215,10 +190,6 @@ export CryptoSemanticModel (
   Theorem_Correctness_Path_eps0_type Theorem_Correctness_Path_eps0_type_closed sem_Theorem_Correctness_Path_eps0_Ty Theorem_Correctness_Path_eps0_ofType
   Theorem_Correctness_Path_eps1_type Theorem_Correctness_Path_eps1_type_closed sem_Theorem_Correctness_Path_eps1_Ty Theorem_Correctness_Path_eps1_ofType
 )
-
--- ============================================================================
--- 16〜20 の実体化（クラス外からの型クラス制約を利用した定理証明）
--- ============================================================================
 
 def sem_Cipher_eq_obj {seq : UHomSeq P_cat} [UHomSeq.PiSeq seq] [UHomSeq.SigSeq seq] [UHomSeq.IdSeq seq] [CryptoSemanticModel seq] {h0 : 0 < seq.length + 1} : yoneda.obj seq.nilCObj.fst ⟶ (seq.objs 0 h0).Tm :=
   let _concrete_proof := concrete_Cipher_eq_impl 0 0 0
@@ -265,10 +236,6 @@ theorem sem_Theorem_Correctness_Path_eps1_tp_comm {seq : UHomSeq P_cat} [UHomSeq
   dsimp [sem_Theorem_Correctness_Path_eps1_obj]
   exact lift_eq_proof_tp_comm (sem_Theorem_Correctness_Path_eps1_Ty (h0 := h0))
 
--- ==========================================
--- 解釈マッピング関数と理論シグネチャの構築
--- ==========================================
-
 def cast_sem_to_I (seq : UHomSeq P_cat) [UHomSeq.PiSeq seq] [UHomSeq.SigSeq seq] [UHomSeq.IdSeq seq]
   {l : Nat} {hl : l < seq.length + 1} {h0 : 0 < seq.length + 1} (h_eq : 0 = l)
   (sem : yoneda.obj seq.nilCObj.fst ⟶ (seq.objs 0 h0).Tm) :
@@ -295,11 +262,11 @@ def crypto_topos_interpretation (seq : UHomSeq P_cat) [UHomSeq.PiSeq seq] [UHomS
       else if c = `Cipher then some (cast_sem_to_I seq hl0.symm (sem_Cipher_obj (h0 := h0)))
       else if c = `Decipher then some (cast_sem_to_I seq hl0.symm (sem_Decipher_obj (h0 := h0)))
       else if c = `Theorem_Correctness_Path then some (cast_sem_to_I seq hl0.symm (sem_Theorem_Correctness_Path_obj (h0 := h0)))
-      else if c = `Cipher_eq then some (cast_sem_to_I seq hl0.symm (sem_Cipher_eq_obj (h0:=h0)))
-      else if c = `Decipher_eq then some (cast_sem_to_I seq hl0.symm (sem_Decipher_eq_obj (h0:=h0)))
-      else if c = `Theorem_Correctness_Path_eq then some (cast_sem_to_I seq hl0.symm (sem_Theorem_Correctness_Path_eq_obj (h0:=h0)))
-      else if c = `Theorem_Correctness_Path_eps0 then some (cast_sem_to_I seq hl0.symm (sem_Theorem_Correctness_Path_eps0_obj (h0:=h0)))
-      else if c = `Theorem_Correctness_Path_eps1 then some (cast_sem_to_I seq hl0.symm (sem_Theorem_Correctness_Path_eps1_obj (h0:=h0)))
+      else if c = `Cipher_eq then some (cast_sem_to_I seq hl0.symm (sem_Cipher_eq_obj (h0 := h0)))
+      else if c = `Decipher_eq then some (cast_sem_to_I seq hl0.symm (sem_Decipher_eq_obj (h0 := h0)))
+      else if c = `Theorem_Correctness_Path_eq then some (cast_sem_to_I seq hl0.symm (sem_Theorem_Correctness_Path_eq_obj (h0 := h0)))
+      else if c = `Theorem_Correctness_Path_eps0 then some (cast_sem_to_I seq hl0.symm (sem_Theorem_Correctness_Path_eps0_obj (h0 := h0)))
+      else if c = `Theorem_Correctness_Path_eps1 then some (cast_sem_to_I seq hl0.symm (sem_Theorem_Correctness_Path_eps1_obj (h0 := h0)))
       else none
     else none
 
@@ -327,16 +294,12 @@ def crypto_topos_axioms (seq : UHomSeq P_cat) [UHomSeq.PiSeq seq] [UHomSeq.SigSe
     else if c = `Theorem_Correctness_Path_eps1 then some ⟨(Theorem_Correctness_Path_eps1_type seq, 0), by exact ⟨Theorem_Correctness_Path_eps1_type_closed, Nat.zero_le _⟩⟩
     else none
 
--- ==========================================
--- 解釈の適格性の完全証明 (Interpretation Well-formedness)
--- ==========================================
-
 syntax "prove_interpretation_branch " term:max term:max term:max term:max term:max : tactic
 
 macro_rules
   | `(tactic| prove_interpretation_branch $seq $sem_obj $sem_Ty $tp_comm $of_type) =>
     `(tactic| (
-      refine Exists.intro (cast_sem_to_I $seq rfl $sem_obj) (And.intro ?_ ?_)
+      refine Exists.intro (cast_sem_to_I $seq rfl$sem_obj) (And.intro ?_ ?_)
       · first
           | rfl
           | (unfold crypto_topos_interpretation; simp)
@@ -602,9 +565,6 @@ instance crypto_topos_interpretation_wf (seq : UHomSeq P_cat) [UHomSeq.PiSeq seq
                                           { simp only [if_neg hc1, if_neg hc2, if_neg hc3, if_neg hc4, if_neg hc5, if_neg hc6, if_neg hc7, if_neg hc8, if_neg hc9, if_neg hc10, if_neg hc11, if_neg hc12, if_neg hc13, if_neg hc14, if_neg hc15, if_neg hc16, if_neg hc17, if_neg hc18, if_neg hc19, if_neg hc20] at h_ax
                                             contradiction } } } } } } } } } } } } } } } } } } } }
 
--- ==========================================
--- 5. 健全性定理（Absolute Soundness）の適用
--- ==========================================
 set_option linter.unusedSectionVars false
 
 instance crypto_topos_wf_fact (seq : UHomSeq P_cat) [UHomSeq.PiSeq seq] [UHomSeq.SigSeq seq] [UHomSeq.IdSeq seq] [CryptoSemanticModel seq]
