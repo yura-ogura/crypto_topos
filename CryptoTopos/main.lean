@@ -45,15 +45,17 @@ theorem crypto_topos_absolute_soundness
     [UHomSeq.PiSeq seq]
     [UHomSeq.SigSeq seq]
     [UHomSeq.IdSeq seq]
+    [CryptoSemanticModel seq]
     (hlmax : SynthLean.univMax ≤ seq.length)
     {Γ : Ctx Lean.Name} {t A : Expr Lean.Name} {l : Nat}
     (sΓ : seq.CObj)
     (h_ctx_sem : sΓ ∈ (crypto_topos_interpretation seq).ofCtx Γ)
-    (h_typing : crypto_topos_axioms ∣ Γ ⊢[l] t : A) :
+    (h_typing : (crypto_topos_axioms seq) ∣ Γ ⊢[l] t : A) : -- ★ 修正2: seq を渡す
     ∃ (t_sem : yoneda.obj sΓ.1 ⟶ (seq.objs l (h_typing.lt_slen hlmax)).Tm)
       (A_sem : yoneda.obj sΓ.1 ⟶ (seq.objs l (h_typing.lt_slen hlmax)).Ty),
       t_sem ≫ (seq.objs l (h_typing.lt_slen hlmax)).tp = A_sem := by
-  haveI : Fact ((crypto_topos_interpretation seq).Wf hlmax crypto_topos_axioms) :=
+  
+  haveI : Fact ((crypto_topos_interpretation seq).Wf hlmax (crypto_topos_axioms seq)) :=
     ⟨crypto_topos_interpretation_wf seq hlmax⟩
 
   have sound_tm := (Interpretation.ofType_ofTerm_sound (s := seq) (I := crypto_topos_interpretation seq) (slen := hlmax)).2.2.2.1 h_typing
