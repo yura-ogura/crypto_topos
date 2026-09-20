@@ -44,10 +44,29 @@ namespace SemanticProofs
   rw [minus_one_eq]
   ring
 
--- Note: These lemmas regarding fractional constants are reserved for non-linear potential 
--- geometric proofs (Future Work) and are not required for the linear masking correctness proven below.
-@[simp] lemma zmod_inv_two_eq : (inv_two : ZMod q) = 2⁻¹ := by sorry
-@[simp] lemma zmod_sqrt_exp_eq : (sqrt_exp : ZMod q) = 4⁻¹ := by sorry
+lemma cast_eq_inv_of_mul_eq (a k : ℕ) (hcop : Nat.Coprime k q)
+    (h : a * k = q + 1) : (a : ZMod q) = (k : ZMod q)⁻¹ := by
+  have h1 : (k : ZMod q) * (k : ZMod q)⁻¹ = 1 := ZMod.coe_mul_inv_eq_one k hcop
+  have h2 : (a : ZMod q) * (k : ZMod q) = 1 := by
+    have h' := congrArg (Nat.cast : ℕ → ZMod q) h
+    rw [Nat.cast_mul, Nat.cast_add, Nat.cast_one, ZMod.natCast_self, zero_add] at h'
+    exact h'
+  calc (a : ZMod q)
+      = (a : ZMod q) * ((k : ZMod q) * (k : ZMod q)⁻¹) := by rw [h1, mul_one]
+    _ = ((a : ZMod q) * (k : ZMod q)) * (k : ZMod q)⁻¹ := by rw [mul_assoc]
+    _ = (k : ZMod q)⁻¹ := by rw [h2, one_mul]
+
+@[simp] lemma zmod_inv_two_eq : (inv_two : ZMod q) = 2⁻¹ := by
+  have h := cast_eq_inv_of_mul_eq inv_two 2
+    (by unfold q; decide)
+    (by unfold inv_two q; norm_num)
+  exact_mod_cast h
+
+@[simp] lemma zmod_sqrt_exp_eq : (sqrt_exp : ZMod q) = 4⁻¹ := by
+  have h := cast_eq_inv_of_mul_eq sqrt_exp 4
+    (by unfold q; decide)
+    (by unfold sqrt_exp q; norm_num)
+  exact_mod_cast h
 
 def concrete_Cipher (n s r : Nat) : Nat := modAdd n (modMul s r)
 def concrete_Decipher (c s r : Nat) : Nat := modSub c (modMul s r)
