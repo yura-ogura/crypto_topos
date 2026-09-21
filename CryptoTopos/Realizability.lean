@@ -7,7 +7,6 @@ import Mathlib.Tactic.Ring
 import Mathlib.CategoryTheory.Opposites
 import Mathlib.CategoryTheory.Yoneda
 import Mathlib.CategoryTheory.Functor.Category
-import CryptoTopos.Model
 
 open CategoryTheory
 
@@ -365,6 +364,13 @@ def Decipher_TrackedMap :
     TrackedMap (prodPA (prodPA Zq_PA Zq_PA) Zq_PA) Zq_PA where
   toFun := decipherFun
   tracked := decipher_isTracked
+
+structure Manifold4D where
+  id : Nat
+  x  : Nat
+  y  : Nat
+  z  : Nat
+  t  : Nat
 
 def encodeManifold4D (m : Manifold4D) : Nat :=
   Nat.pair m.id (Nat.pair m.x (Nat.pair m.y (Nat.pair m.z m.t)))
