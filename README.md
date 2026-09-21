@@ -14,9 +14,9 @@ A Formal Verification Framework for Cryptographic Protocols in the Effective 2-T
 
 ### Key Features & Current Capabilities
 
-- **Axiomatic Semantic Bridge & Soundness:** Connects deeply embedded syntax (`SynthLean`) with concrete $\mathbb{Z}_q$ algebraic models via heavily optimized axiomatic interfaces (to prevent AST explosion). The absolute soundness theorem is mechanically checked with respect to these axioms.
-- **Structural Formalization of $\mathcal{Eff}_2$:** Provides foundational definitions and axiomatic specifications for fibrant 0-types, coherent groupoids, and the $\tau_0$-truncation bridge mapping $\mathcal{Eff}_2$ structures to the $\mathcal{Eff}_1$ topos.
-- **Verified Path Types & Internal Identity:** Implements Awodey–Hua Path Types. The intensional MLTT identity elimination ($J$-rule) is strictly proven via `theorem` using Hurewicz fibrations and connections.
+- **Axiomatic Semantic Bridge to Concrete Realizability:** Connects deeply embedded syntax (`SynthLean`) with concrete $\mathbb{Z}_q$ algebraic models. With the latest updates, dummy axioms have been eliminated and replaced with concrete semantic terms based on **Kleene's First Realizability** and **Partitioned Assemblies**.
+- **Structural Formalization of $\mathcal{Eff}_2$:** Provides foundational definitions for fibrant 0-types, coherent groupoids, and the $\tau_0$-truncation bridge mapping $\mathcal{Eff}_2$ structures to the $\mathcal{Eff}_1$ topos, fully realizing objects as effective objects (`IsEffObject`).
+- **Verified Path Types & Internal Identity:** Implements Awodey–Hua Path Types. The intensional MLTT identity elimination ($J$-rule) is strictly proven and concretely constructed in the Hofmann-Streicher natural model universe.
 - **Algebraic & Geometric Computation Engine:** Implements the Pohlig–Hellman discrete logarithm algorithm, 7D manifold potential fields ($\Psi_7$), geodesic residual constraints, and validates decryption correctness over the scalar field $\mathbb{Z}_q$.
 
 ---
@@ -29,6 +29,7 @@ A Formal Verification Framework for Cryptographic Protocols in the Effective 2-T
   - `Frontend.lean` : EDSL syntax declarations and macro expansions for `crypto_topos`
   - `Interpretation.lean` : Absolute Soundness mapping linking syntax to semantics via `Interpretation.Wf`
   - `Model.lean` : Discrete logarithm, 7D manifold geometry, and geodesic path computational models
+  - `Realizability.lean` : Implementation of Kleene's First Realizability, Partitioned Assemblies, Hofmann-Streicher universes, and concrete implementations of HoTT type formers without dummy axioms.
   - `SemanticProofs.lean` : $\mathbb{Z}_q$ algebraic reduction infrastructure and fully proven correctness theorems
   - `main.lean` : End-to-end verification entry point evaluating syntactic judgments to presheaf morphisms
 - `Reference/`
@@ -40,6 +41,7 @@ A Formal Verification Framework for Cryptographic Protocols in the Effective 2-T
 - **`CryptoTopos/SemanticProofs.lean`:** Contains concrete algebraic reduction lemmas using `ring` tactics. Fully proves `concrete_Correctness_Path_eps0_impl` ($c - s \cdot r + s \cdot r \equiv n \pmod q$) without unproven assumptions.
 - **`CryptoTopos/Interpretation.lean`:** Bridges the abstract natural model universe with concrete proofs. Establishes `crypto_topos_interpretation_wf` and checks the structural `crypto_absolute_soundness` theorem.
 - **`Reference/Syntax.lean`:** Serves as the pure theoretical foundation. Isolated in the `Reference/` directory to provide a standalone, strictly HoTT-compliant formalization of Awodey & Emmenegger (2025) and Awodey & Hua (2026), completely decoupled from the cryptographic application layer. The $J$-elimination rule is strictly proven (`IdElim_J_comp`), while higher topos structures are laid out as axiomatic interfaces.
+- **`CryptoTopos/Realizability.lean`:** Establishes the computational foundation following Awodey & Emmenegger (2025). It rigorously defines Kleene's First Realizability, constructs Partitioned Assemblies for $\mathbb{Z}_q$ and 4D manifolds, and formalizes Hofmann-Streicher universes. Crucially, it provides concrete constructions for $\Pi$, $\Sigma$, and Id types, replacing previous axiomatic abstractions with strict presheaf semantics.
 
 ---
 
@@ -50,8 +52,8 @@ The framework strictly proves that for any message $n$, secret $s$, and randomne
 
 $$\text{Decipher}(\text{Cipher}(n, s, r), s, r) \equiv n \pmod q$$
 
-### 2. Absolute Soundness Evaluation
-Under the defined axiomatic signature, every syntactic typing derivation $\Gamma \vdash_l t : A$ in the `crypto_topos` theory translates directly into a commutative diagram of morphisms in the presheaf semantics:
+### 2. Absolute Soundness Evaluation via Concrete Realizability
+Under the defined signature, every syntactic typing derivation $\Gamma \vdash_l t : A$ in the `crypto_topos` theory translates directly into a commutative diagram of morphisms in the presheaf semantics. Thanks to the integration of the realizability model, the absolute soundness theorem (`crypto_topos_absolute_soundness`) is proven completely using concrete constructions, devoid of unproven dummy axioms.
 
 $$\text{interpTm}(\text{deriv}) \gg (M_l).\text{tp} = \text{interpTy}(\text{deriv.wf}\_\text{tp})$$
 
@@ -59,12 +61,12 @@ $$\text{interpTm}(\text{deriv}) \gg (M_l).\text{tp} = \text{interpTy}(\text{deri
 
 ## Limitations & Future Work
 
-As a Proof of Concept (PoC), this framework currently abstracts certain complex type-theoretic and categorical formations (e.g., deeply nested $\Sigma$-types and presheaf limits) into `axiom` definitions to ensure computational feasibility in Lean 4 (avoiding AST explosion and timeout limits). 
+While the framework has successfully transitioned from an initially axiomatic PoC to a concrete semantic model (replacing intermediate `axiom` interfaces with rigorous Partitioned Assembly constructions and Kleene's Realizability), further expansions are planned.
 
 Future milestones include:
-1. Replacing intermediate `axiom` interfaces with constructed instances where computationally viable.
-2. Extending the $\mathbb{Z}_q$ algebraic masking to support non-linear arithmetic circuits (e.g., PlonK / Kimchi).
-3. Developing developer-friendly tooling to generate verified ZK-circuit representations directly from the `crypto_topos` DSL.
+1. Extending the $\mathbb{Z}_q$ algebraic masking to support non-linear arithmetic circuits (e.g., PlonK / Kimchi).
+2. Developing developer-friendly tooling to generate verified ZK-circuit representations directly from the `crypto_topos` DSL.
+3. Expanding the effective topos structures to natively support higher-dimensional univalent universes.
 
 ---
 
